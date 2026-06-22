@@ -98,6 +98,9 @@ DEFAULT_CONFIG = {
     "system": {
         "backend_port": 8000,
         "ws_reconnect_ms": 3000,
+        # Passe à true quand l'assistant de configuration (admin web) est terminé.
+        # false sur une install neuve = le wizard s'ouvre automatiquement.
+        "setup_complete": False,
     },
     # Domotique : registre d'appareils (vide = désactivée). Voir services/home/base.py
     # pour le modèle. Édité à la main / par l'assistant de config (à venir).

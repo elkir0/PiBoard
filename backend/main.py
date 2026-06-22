@@ -156,6 +156,10 @@ def _make_music_provider(kind: str) -> MusicProvider:
     if kind == "spotify":
         logger.info("[MUSIC] Provider actif: Spotify")
         return SpotifyProvider()
+    if kind == "spotify_connect":
+        from services.music.spotify_connect_provider import SpotifyConnectProvider
+        logger.info("[MUSIC] Provider actif: Spotify Connect (go-librespot)")
+        return SpotifyConnectProvider()
     if kind == "local":
         from services.music.local_provider import LocalProvider
         logger.info("[MUSIC] Provider actif: Bibliotheque locale")
@@ -807,21 +811,33 @@ async def music_state_poller():
     sort immediatement sans rien parser pour ne pas errer.
     """
     if MUSIC_PROVIDER != "spotify":
-        # Deezer : pas de journal librespot. Le now-playing arrive via le
-        # provider (on_track_change). Ici on pousse la progression REELLE
-        # (mpv time-pos via player.current_live) toutes les 2 s pour que la
-        # barre reste synchro cote UI (qui interpole entre deux ticks).
+        # Deezer/radio : pas de journal librespot. Le now-playing arrive via le
+        # provider (on_track_change, event mpv). Ici on pousse la progression
+        # REELLE toutes les 2 s pour que la barre reste synchro cote UI.
+        #
+        # spotify_connect : RECEPTEUR sans mpv -> AUCUN event on_track_change. Le
+        # now-playing complet (titre/artiste/pochette) n'existe QUE via ce poll
+        # de l'API go-librespot. On diffuse donc le `music` complet a chaque
+        # changement d'URI (et un playing:False quand la session s'arrete).
+        push_full = MUSIC_PROVIDER == "spotify_connect"
+        last_uri = None
         while True:
             try:
                 cur = await music.get_current()
                 if cur.get("playing"):
+                    if push_full and cur.get("uri") != last_uri:
+                        last_uri = cur.get("uri")
+                        await broadcast({"type": "music", "data": cur})
                     await broadcast({"type": "music_progress", "data": {
                         "progress_ms": cur.get("progress_ms", 0),
                         "duration_ms": cur.get("duration_ms", 0),
                         "playing": True,
                     }})
+                elif push_full and last_uri is not None:
+                    last_uri = None
+                    await broadcast({"type": "music", "data": {"playing": False}})
             except Exception as e:
-                logger.debug("[POLLER] deezer progress: %s", e)
+                logger.debug("[POLLER] progress: %s", e)
             await asyncio.sleep(2)
         return
     import subprocess, re, time as _time

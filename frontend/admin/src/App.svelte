@@ -1,8 +1,9 @@
 <script>
   import { onMount } from 'svelte';
-  import { isAuthenticated, checkAuth, logout, toastMessage } from './stores/auth.js';
+  import { isAuthenticated, checkAuth, logout, toastMessage, apiGet } from './stores/auth.js';
 
   import Login from './pages/Login.svelte';
+  import Setup from './pages/Setup.svelte';
   import Dashboard from './pages/Dashboard.svelte';
   import Audio from './pages/Audio.svelte';
   import Voice from './pages/Voice.svelte';
@@ -18,11 +19,28 @@
   let activePage = 'dashboard';
   let sidebarOpen = false;
   let toast = null;
+  let showWizard = false;
+  let checkedSetup = false;
 
   toastMessage.subscribe(v => toast = v);
 
+  // Première utilisation : ouvre l'assistant de configuration automatiquement
+  // tant que system.setup_complete n'est pas vrai (une seule vérification).
+  isAuthenticated.subscribe(async (auth) => {
+    if (auth && !checkedSetup) {
+      const cfg = await apiGet('/admin/api/config');
+      // Ne verrouille la vérification QUE si la lecture a réussi : un échec transitoire
+      // (ou une session pas encore prête) laisse réessayer au prochain passage à auth.
+      if (cfg && cfg.system) {
+        checkedSetup = true;
+        if (cfg.system.setup_complete === false) showWizard = true;
+      }
+    }
+  });
+
   const navItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1' },
+    { id: 'setup', label: 'Assistant config', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
     { id: 'audio', label: 'Audio & Micro', icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' },
     { id: 'voice', label: 'Commandes vocales', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
     { id: 'music', label: 'Musique', icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z' },
@@ -36,8 +54,9 @@
   ];
 
   function navigate(pageId) {
-    activePage = pageId;
     sidebarOpen = false;
+    if (pageId === 'setup') { showWizard = true; return; }
+    activePage = pageId;
   }
 
   onMount(() => {
@@ -120,6 +139,12 @@
   </div>
 {/if}
 
+{#if $isAuthenticated && showWizard}
+  <div class="wizard-overlay">
+    <Setup onClose={() => showWizard = false} />
+  </div>
+{/if}
+
 {#if toast}
   <div class="toast" class:error={toast.type === 'error'} class:success={toast.type === 'success'}>
     {toast.text}
@@ -130,6 +155,15 @@
   .layout {
     display: flex;
     min-height: 100vh;
+  }
+
+  .wizard-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: #0a0a12;
+    overflow-y: auto;
+    padding: 32px 20px 48px;
   }
 
   .hamburger {

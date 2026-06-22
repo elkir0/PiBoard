@@ -79,13 +79,17 @@ SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI", "http://127.0.0.1:8888/
 SPOTIFY_DEVICE_NAME = os.getenv("SPOTIFY_DEVICE_NAME", "Devialet")
 
 # Musique — provider actif. Defaut LEGAL = radio (aucun compte requis).
-#   "radio"   = radio internet (radio-browser, gratuit, sans compte) — DEFAUT
-#   "local"   = bibliotheque de fichiers locale (MUSIC_LIBRARY_DIR)
-#   "spotify" = compte Spotify
-#   "deezer"  = OPT-IN (zone grise ARL ; fournis ton propre DEEZER_ARL)
+#   "radio"           = radio internet (radio-browser, gratuit, sans compte) — DEFAUT
+#   "local"           = bibliotheque de fichiers locale (MUSIC_LIBRARY_DIR)
+#   "spotify"         = compte Spotify (API Web)
+#   "spotify_connect" = recepteur Spotify Connect via go-librespot (le Pi = point de
+#                       lecture ; pilote depuis l'app Spotify ; Premium requis)
+#   "deezer"          = OPT-IN (zone grise ARL ; fournis ton propre DEEZER_ARL)
 MUSIC_PROVIDER = os.getenv("MUSIC_PROVIDER", "radio")
 # Dossier de la bibliotheque locale (si MUSIC_PROVIDER=local). Defaut ~/Music.
 MUSIC_LIBRARY_DIR = os.getenv("MUSIC_LIBRARY_DIR", os.path.expanduser("~/Music"))
+# API HTTP locale de go-librespot (si MUSIC_PROVIDER=spotify_connect).
+GO_LIBRESPOT_API_URL = os.getenv("GO_LIBRESPOT_API_URL", "http://127.0.0.1:3678")
 
 # Deezer (ARL-only, source musicale V3)
 DEEZER_ARL = os.getenv("DEEZER_ARL", "")
