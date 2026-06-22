@@ -1,0 +1,19 @@
+# PI-Board V3 — backend (Deezer) — service utilisateur systemd.
+# Installer: cp dans ~/.config/systemd/user/ekip-backend.service
+#            systemctl --user daemon-reload && systemctl --user enable --now ekip-backend
+# Requiert: loginctl enable-linger piboard  (pour tourner sans session graphique)
+[Unit]
+Description=PI-Board V3 backend (Deezer)
+After=pipewire.service wireplumber.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/piboard/piboard/backend
+ExecStart=/home/piboard/piboard/venv/bin/python main.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/home/piboard/piboard/backend.log
+StandardError=append:/home/piboard/piboard/backend.log
+
+[Install]
+WantedBy=default.target

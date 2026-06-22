@@ -1,0 +1,53 @@
+# Secrets
+.env
+.env.local
+.env.*.local
+.spotify_cache
+# Config runtime (hash mot de passe admin, réglages) — JAMAIS commiter
+backend/admin/config.json
+# Cookies de session (YouTube, etc.) = secrets
+yt-cookies.txt
+*cookies*.txt
+*.arl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+
+# Build artifacts
+build/
+*.log
+
+# IDE / OS
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Claude dev metadata
+.claude-flow/
+.claude/
+
+# Backups
+src.backup-*/
+
+# Audio models (too large for git)
+backend/audio/models/*.onnx
+backend/audio/models/*.tflite
+
+# Hotword personal data
+backend/audio/hotword_samples/
+backend/audio/hotword_refs/
+
+# Flutter macOS build artefact (on build pour flutter-pi/linux, pas macOS)
+frontend-flutter/macos/Flutter/GeneratedPluginRegistrant.swift

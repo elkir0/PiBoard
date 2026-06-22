@@ -1,0 +1,30 @@
+name: piboard_v2
+description: "PI-Board V2 — Flutter-pi native kiosk for Raspberry Pi 4"
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  web_socket_channel: ^3.0.2
+  media_kit: ^1.1.11
+  media_kit_libs_linux: any
+  qr_flutter: ^4.1.0
+  video_player: ^2.11.1
+  flutterpi_gstreamer_video_player: ^0.2.0
+  flutter_svg: ^2.0.10   # icônes météo Meteocons (SVG, pur Dart, OK flutter-pi)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/icons/weather/

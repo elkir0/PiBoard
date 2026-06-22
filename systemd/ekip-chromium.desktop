@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Ekip Assistant
+Exec=/bin/bash -c "sleep 5 && chromium-browser --kiosk --noerrdialogs --disable-translate --no-first-run --fast --fast-start --disable-infobars --disable-features=TranslateUI --ozone-platform=wayland --enable-wayland-ime --password-store=basic --disk-cache-size=0 http://localhost:8000"
+Hidden=false
+X-GNOME-Autostart-enabled=true

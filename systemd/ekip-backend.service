@@ -1,0 +1,25 @@
+[Unit]
+Description=Ekip Assistant Backend
+After=network.target pipewire.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/piboard/backend
+EnvironmentFile=/home/pi/piboard/.env
+Environment=PATH=/home/pi/piboard/.venv/bin:/usr/bin:/bin
+Environment=DISPLAY=:0
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStartPre=/bin/bash -c "fuser -k 8000/tcp 2>/dev/null; sleep 1; true"
+ExecStartPre=/bin/bash /home/pi/piboard/scripts/setup-audio.sh
+ExecStart=/home/pi/piboard/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

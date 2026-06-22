@@ -1,0 +1,4 @@
+# À installer DANS le venv voxtral-tts (qui fournit déjà mlx, mlx_audio, numpy, soundfile).
+fastapi>=0.110
+uvicorn>=0.29
+python-dotenv>=1.0

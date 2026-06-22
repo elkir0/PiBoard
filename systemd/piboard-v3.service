@@ -1,0 +1,21 @@
+[Unit]
+Description=PI-Board V3 Flutter-pi Kiosk (Salon 1920x1200)
+After=ekip-backend.service systemd-user-sessions.service
+Wants=ekip-backend.service
+
+[Service]
+Type=simple
+User=piboard
+# DRM master access via logind seat — XDG_RUNTIME_DIR must match the user's uid.
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=LC_ALL=C
+ExecStartPre=/bin/sleep 6
+# Release/AOT bundle (app.so). Native EDID 1920x1200 landscape — no --videomode.
+ExecStart=/home/piboard/piboard-v3/flutter-pi --release /home/piboard/piboard-v3
+StandardOutput=append:/tmp/piboard-v3.log
+StandardError=append:/tmp/piboard-v3.log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

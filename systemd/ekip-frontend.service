@@ -1,0 +1,17 @@
+[Unit]
+Description=Ekip Assistant Chromium Kiosk
+After=ekip-backend.service graphical-session.target
+Wants=ekip-backend.service
+
+[Service]
+Type=simple
+User=pi
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DISPLAY=:0
+ExecStart=/usr/bin/chromium-browser --kiosk --noerrdialogs --disable-translate --no-first-run --fast --fast-start --disable-infobars --disable-features=TranslateUI --ozone-platform=wayland --enable-wayland-ime --password-store=basic --disk-cache-size=0 http://localhost:8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target
