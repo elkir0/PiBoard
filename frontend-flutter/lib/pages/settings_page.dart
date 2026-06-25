@@ -222,6 +222,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _wakewordSection() {
     final engine = '${s.cfg('wakeword', 'engine', 'livekit')}';
     final word = '${s.cfg('wakeword', 'name', 'terminator')}';
+    final livekitModel = '${s.cfg('wakeword', 'livekit_model', 'terminator_v1')}';
     final thr = (_thr ?? _num('wakeword', 'threshold', 0.42).toDouble());
     final cooldown = (_cool ?? _num('wakeword', 'cooldown_s', 10).toDouble());
     return SettingsSection(title: t('settings.section.wakeword'), children: [
@@ -245,6 +246,22 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       const Divider(height: 1),
+      if (engine == 'livekit') ...[
+        SettingRow(
+          label: t('ww.livekit_model'),
+          sub: t('ww.livekit_model.sub'),
+          stacked: true,
+          control: ChipSelector(
+            value: livekitModel,
+            options: const [
+              ('terminator_v1', 'Terminator v1'),
+              ('terminator_v2', 'Terminator v2'),
+            ],
+            onSelect: (v) => s.configSet('wakeword', 'livekit_model', v, restart: true),
+          ),
+        ),
+        const Divider(height: 1),
+      ],
       SettingRow(
         label: t('ww.word'),
         sub: t('ww.word.sub'),

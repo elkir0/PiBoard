@@ -67,6 +67,8 @@ const Map<String, Map<String, String>> _strings = {
   // ── Réglages : MOT-RÉVEIL ─────────────────────────────────────────────────
   'ww.engine': {'fr': 'Moteur de détection', 'en': 'Detection engine'},
   'ww.engine.sub': {'fr': 'Livekit = bien moins de faux déclenchements (recommandé)', 'en': 'Livekit = far fewer false triggers (recommended)'},
+  'ww.livekit_model': {'fr': 'Modèle LiveKit', 'en': 'LiveKit model'},
+  'ww.livekit_model.sub': {'fr': 'V2 = nouveau modèle fiable, rollback instantané vers V1', 'en': 'V2 = new reliable model, instant rollback to V1'},
   'ww.word': {'fr': 'Mot-réveil', 'en': 'Wake word'},
   'ww.word.sub': {'fr': 'Un autre mot que « terminator » passe sur openWakeWord', 'en': 'A word other than "terminator" switches to openWakeWord'},
   'ww.sensitivity': {'fr': 'Sensibilité', 'en': 'Sensitivity'},

@@ -25,6 +25,7 @@ DEFAULT_CONFIG = {
         "threshold": 0.48,
         "cooldown_s": 10.0,
         "engine": "livekit",   # livekit | oww (moteur réellement utilisé ; EWN retiré, non installé)
+        "livekit_model": "terminator_v1",  # terminator_v1 | terminator_v2
         "name": "terminator",  # mot-réveil (pertinent EWN)
     },
     "stt": {

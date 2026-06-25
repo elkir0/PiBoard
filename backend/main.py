@@ -20,6 +20,7 @@ from audio.output import (
 import re as _re
 import services.bluetooth as bluetooth
 from admin.config_manager import config
+from runtime_config import ALLOWED_CONFIG_KEYS, CONFIG_COERCE as _CONFIG_COERCE
 from services.stt import STTEngine, preload_vosk, warmup_nemotron
 # Providers musicaux (interface commune services.music.base.MusicProvider).
 # DeezerProvider vit dans le package services.music ; le provider Spotify
@@ -89,60 +90,6 @@ _SENSITIVE_WS = {
     "domotique_portail", "domotique_roller", "domotique_roller_all", "domotique_plug",
     "audio_set_sink", "devialet_power_off", "devialet_restart",
 }
-# Couples (section, clé) modifiables via config_set. JAMAIS 'auth' ni clé arbitraire.
-ALLOWED_CONFIG_KEYS = {
-    ("tts", "provider"), ("tts", "voice"), ("tts", "model"), ("tts", "piper_voice_path"),
-    ("llm", "model"), ("llm", "max_tokens"), ("llm", "system_prompt"),
-    ("wakeword", "threshold"), ("wakeword", "cooldown_s"), ("wakeword", "engine"), ("wakeword", "name"),
-    ("audio", "output_sink"),
-    ("ui", "locale"), ("ui", "accent_color"), ("ui", "bg_color"),
-    ("screen", "brightness"), ("screen", "sleep_hour_start"), ("screen", "sleep_hour_end"),
-}
-
-# Mot-réveil & moteurs autorisés (doivent matcher wakeword.py + l'UI Réglages).
-_WW_ENGINES = ("livekit", "oww")
-_WW_WORDS = ("terminator", "hey_jarvis", "hey_mycroft", "alexa")
-
-
-def _one_of(*allowed):
-    """Coerceur enum : rejette (ValueError) toute valeur hors liste -> non persistée."""
-    def _c(v):
-        if v not in allowed:
-            raise ValueError(v)
-        return v
-    return _c
-
-
-def _hex_color(v):
-    """Coerceur couleur : '#RRGGBB' (ou 'RRGGBB') -> '#RRGGBB' majuscule.
-    Rejette (ValueError) toute autre valeur -> jamais persistée (le thème Flutter
-    ignore de toute façon un hex invalide, mais on ne stocke pas de la garbage)."""
-    if not isinstance(v, str):
-        raise ValueError(v)
-    s = v.strip().lstrip("#")
-    if len(s) != 6 or any(c not in "0123456789abcdefABCDEF" for c in s):
-        raise ValueError(v)
-    return "#" + s.upper()
-
-
-# Coercition type/plage par couple : evite de persister une valeur invalide
-# ('abc' pour threshold, float pour max_tokens...) qui casserait wakeword.py/llm.
-# Une cle absente de cette table est stockee telle quelle (champs texte libres).
-_CONFIG_COERCE = {
-    ("llm", "max_tokens"): lambda v: max(1, int(v)),
-    ("wakeword", "threshold"): lambda v: min(1.0, max(0.0, float(v))),
-    ("wakeword", "cooldown_s"): lambda v: max(0, int(v)),
-    # engine/name : enum strict -> impossible de bricker le wake word via une valeur libre.
-    ("wakeword", "engine"): _one_of(*_WW_ENGINES),
-    ("wakeword", "name"): _one_of(*_WW_WORDS),
-    ("ui", "locale"): _one_of("fr", "en"),
-    ("ui", "accent_color"): _hex_color,
-    ("ui", "bg_color"): _hex_color,
-    ("screen", "brightness"): lambda v: min(100, max(10, int(v))),
-    ("screen", "sleep_hour_start"): lambda v: min(23, max(0, int(v))),
-    ("screen", "sleep_hour_end"): lambda v: min(23, max(0, int(v))),
-}
-
 # --- Core components ---
 audio_capture = AudioCapture(device_name="AI-Voice")
 # Fabrique provider : config.MUSIC_PROVIDER choisit la source musicale active.

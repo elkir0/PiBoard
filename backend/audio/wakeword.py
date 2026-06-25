@@ -79,11 +79,33 @@ OWW_WORD_MODELS = {
 # (il calcule mel + embeddings sur toute la fenetre, fonction pure). On garde
 # donc une fenetre glissante de 2 s et on l'evalue toutes les ~0.4 s.
 LKWW_MODEL = os.path.join(MODELS_DIR, "terminator_livekit.onnx")
+LKWW_MODEL_V2 = os.path.join(MODELS_DIR, "terminator_livekit_v2.onnx")
+LKWW_MODEL_DEFAULT = "terminator_v1"
+LKWW_MODELS = {
+    "terminator_v1": LKWW_MODEL,
+    "terminator_v2": LKWW_MODEL_V2,
+}
 LKWW_WINDOW = 32000   # 2.0 s @ 16 kHz
 LKWW_HOP = 6400       # ~0.4 s entre deux predictions
 
 # EWN expects 24000 samples (1.5 seconds at 16kHz)
 EWN_FRAME_SIZE = 24000
+
+
+def resolve_livekit_model(model_key: str | None) -> tuple[str, str]:
+    """Return the selected LiveKit model, falling back to V1 if unavailable."""
+    selected = model_key if model_key in LKWW_MODELS else LKWW_MODEL_DEFAULT
+    path = LKWW_MODELS[selected]
+    if os.path.exists(path):
+        return selected, path
+    if selected != LKWW_MODEL_DEFAULT:
+        logger.warning(
+            "[WAKEWORD] modele livekit %s absent (%s) -> %s",
+            selected,
+            path,
+            LKWW_MODEL_DEFAULT,
+        )
+    return LKWW_MODEL_DEFAULT, LKWW_MODELS[LKWW_MODEL_DEFAULT]
 
 
 class WakeWordDetector:
@@ -123,17 +145,21 @@ class WakeWordDetector:
             self._cooldown = float(COOLDOWN_S_DEFAULT)
         engine_pref = _cfg("engine", "livekit")
         word = _cfg("name", WAKEWORD_NAME)  # mot-réveil choisi (terminator/hey_jarvis/…)
+        livekit_model_key, livekit_model_path = resolve_livekit_model(
+            _cfg("livekit_model", LKWW_MODEL_DEFAULT)
+        )
 
         # 1) livekit-wakeword (prefere) : meilleur detecteur, mais NE connait que
-        #    « terminator » (modele entraine). On l'utilise donc seulement si le mot
-        #    demande est terminator ET le moteur n'est pas force sur openWakeWord.
+        #    « terminator » (modeles V1/V2 entraines). On l'utilise donc seulement
+        #    si le mot demande est terminator ET le moteur n'est pas force sur openWakeWord.
         #    Sinon -> openWakeWord (seul a pouvoir changer de mot).
-        if engine_pref != "oww" and word == "terminator" and HAS_LKWW and os.path.exists(LKWW_MODEL):
+        if engine_pref != "oww" and word == "terminator" and HAS_LKWW and os.path.exists(livekit_model_path):
             try:
-                self._lkww_model = LKWWModel(models=[LKWW_MODEL])
+                self._lkww_model = LKWWModel(models=[livekit_model_path])
                 self._use_lkww = True
-                logger.info("[WAKEWORD] livekit-wakeword charge (%s, threshold=%.2f, cooldown=%.0fs)",
-                           os.path.basename(LKWW_MODEL), self._threshold, self._cooldown)
+                logger.info("[WAKEWORD] livekit-wakeword charge (%s:%s, threshold=%.2f, cooldown=%.0fs)",
+                           livekit_model_key, os.path.basename(livekit_model_path),
+                           self._threshold, self._cooldown)
             except Exception as e:
                 logger.error("[WAKEWORD] Erreur init livekit-wakeword: %s", e)
                 self._use_lkww = False
