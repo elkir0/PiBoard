@@ -48,6 +48,7 @@ backend/audio/models/*.tflite
 # Hotword personal data
 backend/audio/hotword_samples/
 backend/audio/hotword_refs/
+backend/audio/wakeword_jobs/
 
 # Flutter macOS build artefact (on build pour flutter-pi/linux, pas macOS)
 frontend-flutter/macos/Flutter/GeneratedPluginRegistrant.swift

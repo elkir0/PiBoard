@@ -8,9 +8,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from fastapi import APIRouter, Request, Response, HTTPException, Depends, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi.responses import FileResponse, JSONResponse
 
+from admin import wakeword_jobs
 from admin.config_manager import config, is_admin_writable, admin_section_keys
 from admin.auth import (
     verify_login,
@@ -530,6 +531,137 @@ async def generate_hotword_reference(_token: str = Depends(require_auth)):
     except Exception as e:
         logger.error("[ADMIN] Erreur generation reference: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- LiveKit wakeword V2 trainer ---
+
+def _wakeword_http_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, FileNotFoundError):
+        return HTTPException(status_code=404, detail=str(exc))
+    if isinstance(exc, ValueError):
+        return HTTPException(status_code=400, detail=str(exc))
+    logger.exception("[WAKEWORD-JOBS] Erreur API")
+    return HTTPException(status_code=500, detail=str(exc))
+
+
+@admin_router.get("/wakeword/model-status")
+async def wakeword_model_status(_token: str = Depends(require_auth)):
+    return wakeword_jobs.model_status()
+
+
+@admin_router.get("/wakeword/jobs")
+async def wakeword_list_jobs(_token: str = Depends(require_auth)):
+    return {"jobs": wakeword_jobs.list_jobs()}
+
+
+@admin_router.post("/wakeword/jobs")
+async def wakeword_create_job(request: Request, _token: str = Depends(require_auth)):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    try:
+        return wakeword_jobs.create_job(body.get("wakeword", "terminator"))
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.get("/wakeword/jobs/{job_id}")
+async def wakeword_get_job(job_id: str, _token: str = Depends(require_auth)):
+    try:
+        return wakeword_jobs.load_job(job_id)
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.post("/wakeword/jobs/{job_id}/record")
+async def wakeword_record_sample(job_id: str, request: Request, _token: str = Depends(require_auth)):
+    try:
+        body = await request.json()
+        kind = body.get("kind", "positive")
+        duration = min(12.0, max(1.0, float(body.get("duration_s", 3))))
+        label = body.get("label", "")
+        audio_capture = getattr(request.app.state, "audio_capture", None)
+        if audio_capture is None:
+            raise RuntimeError("Capture audio indisponible")
+
+        q = audio_capture.subscribe()
+        chunks = []
+        loop = asyncio.get_running_loop()
+        start = loop.time()
+        try:
+            while (loop.time() - start) < duration:
+                try:
+                    chunks.append(await asyncio.wait_for(q.get(), timeout=0.5))
+                except asyncio.TimeoutError:
+                    continue
+        finally:
+            audio_capture.unsubscribe(q)
+
+        if not chunks:
+            raise RuntimeError("Pas d'audio capture")
+
+        import numpy as np
+
+        audio = np.concatenate(chunks).astype(np.int16, copy=False)
+        sample = wakeword_jobs.save_sample(job_id, kind, audio.tobytes(), label=label)
+        return {"ok": True, "sample": sample, "job": wakeword_jobs.load_job(job_id)}
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.delete("/wakeword/jobs/{job_id}/samples/{kind}/{filename}")
+async def wakeword_delete_sample(job_id: str, kind: str, filename: str, _token: str = Depends(require_auth)):
+    try:
+        deleted = wakeword_jobs.delete_sample(job_id, kind, filename)
+        if not deleted:
+            raise FileNotFoundError("Echantillon introuvable")
+        return {"ok": True}
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.post("/wakeword/jobs/{job_id}/package")
+async def wakeword_package_job(job_id: str, request: Request, _token: str = Depends(require_auth)):
+    try:
+        base_url = str(request.base_url).rstrip("/")
+        path = wakeword_jobs.build_training_pack(job_id, base_url)
+        download_url = f"{base_url}/admin/api/wakeword/jobs/{job_id}/download"
+        return {"ok": True, "file": path.name, "download_url": download_url}
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.get("/wakeword/jobs/{job_id}/download")
+async def wakeword_download_pack(job_id: str, _token: str = Depends(require_auth)):
+    try:
+        path = wakeword_jobs.package_path(job_id)
+        return FileResponse(path, filename=path.name, media_type="application/zip")
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.post("/wakeword/jobs/{job_id}/upload")
+async def wakeword_upload_model(job_id: str, request: Request, _token: str = Depends(require_auth)):
+    try:
+        filename = request.headers.get("x-filename", "terminator_livekit_v2.onnx")
+        data = await request.body()
+        path = wakeword_jobs.save_uploaded_model(job_id, filename, data)
+        return {"ok": True, "file": path.name, "size": path.stat().st_size, "job": wakeword_jobs.load_job(job_id)}
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
+
+
+@admin_router.post("/wakeword/jobs/{job_id}/install")
+async def wakeword_install_model(job_id: str, request: Request, _token: str = Depends(require_auth)):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    try:
+        return wakeword_jobs.install_model(job_id, activate=bool(body.get("activate", False)))
+    except Exception as exc:
+        raise _wakeword_http_error(exc)
 
 
 @admin_router.post("/password")

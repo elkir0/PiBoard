@@ -140,3 +140,41 @@ export async function apiPost(url, data) {
     return { ok: false };
   }
 }
+
+export async function apiDelete(url) {
+  try {
+    const res = await fetch(`${getBaseUrl()}${url}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: authHeaders(),
+    });
+    const handled = await handleResponse(res);
+    if (!handled) return { ok: false };
+    return { ok: handled.ok, data: handled.ok ? await handled.json() : null };
+  } catch (e) {
+    showToast('Erreur de connexion', 'error');
+    return { ok: false };
+  }
+}
+
+export async function apiUpload(url, file) {
+  try {
+    const headers = {};
+    const token = localStorage.getItem('admin_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Filename'] = file?.name || 'terminator_livekit_v2.onnx';
+
+    const res = await fetch(`${getBaseUrl()}${url}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body: file,
+    });
+    const handled = await handleResponse(res);
+    if (!handled) return { ok: false };
+    return { ok: handled.ok, data: handled.ok ? await handled.json() : null };
+  } catch (e) {
+    showToast('Erreur de connexion', 'error');
+    return { ok: false };
+  }
+}

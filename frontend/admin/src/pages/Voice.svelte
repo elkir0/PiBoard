@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { apiGet, apiPut, apiPost, showToast } from '../stores/auth.js';
 
+  export let onConfigureWakeword = () => {};
+
   let wakeword = {
     engine: 'livekit',
     name: 'terminator',
@@ -209,6 +211,9 @@
           </select>
           <p class="hint">V2 utilise terminator_livekit_v2.onnx ; si le fichier est absent, le backend retombe sur V1.</p>
         </div>
+        <button class="btn-trainer" on:click={onConfigureWakeword}>
+          Configurer le Wakeword
+        </button>
       {/if}
 
       <div class="form-group">
@@ -512,6 +517,22 @@
 
   .btn-save:hover { opacity: 0.9; }
   .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn-trainer {
+    width: 100%;
+    background: #1a1a24;
+    color: #f0f0f0;
+    border: 1px solid rgba(108,99,255,0.45);
+    padding: 11px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    margin: -4px 0 20px;
+  }
+
+  .btn-trainer:hover { border-color: #6c63ff; }
 
   /* Hotword training */
   .help-text {

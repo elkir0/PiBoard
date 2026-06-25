@@ -7,6 +7,7 @@
   import Dashboard from './pages/Dashboard.svelte';
   import Audio from './pages/Audio.svelte';
   import Voice from './pages/Voice.svelte';
+  import WakewordTrainer from './pages/WakewordTrainer.svelte';
   import Music from './pages/Music.svelte';
   import YouTube from './pages/YouTube.svelte';
   import Weather from './pages/Weather.svelte';
@@ -43,6 +44,7 @@
     { id: 'setup', label: 'Assistant config', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
     { id: 'audio', label: 'Audio & Micro', icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' },
     { id: 'voice', label: 'Commandes vocales', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+    { id: 'wakeword_trainer', label: 'Wakeword V2', icon: 'M12 18.5a6.5 6.5 0 006.5-6.5H21a9 9 0 01-18 0h2.5a6.5 6.5 0 006.5 6.5z M12 3a3 3 0 013 3v6a3 3 0 11-6 0V6a3 3 0 013-3z' },
     { id: 'music', label: 'Musique', icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z' },
     { id: 'youtube', label: 'YouTube', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'weather', label: 'Meteo', icon: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z' },
@@ -117,7 +119,9 @@
       {:else if activePage === 'audio'}
         <Audio />
       {:else if activePage === 'voice'}
-        <Voice />
+        <Voice onConfigureWakeword={() => activePage = 'wakeword_trainer'} />
+      {:else if activePage === 'wakeword_trainer'}
+        <WakewordTrainer onBack={() => activePage = 'voice'} />
       {:else if activePage === 'music'}
         <Music />
       {:else if activePage === 'youtube'}
