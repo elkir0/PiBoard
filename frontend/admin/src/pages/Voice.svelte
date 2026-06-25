@@ -5,6 +5,7 @@
   let wakeword = {
     engine: 'livekit',
     name: 'terminator',
+    livekit_model: 'terminator_v1',
     threshold: 0.42,
     cooldown_s: 10,
   };
@@ -198,6 +199,17 @@
           <option value="hey_mycroft">hey_mycroft</option>
         </select>
       </div>
+
+      {#if wakeword.engine === 'livekit'}
+        <div class="form-group">
+          <label class="form-label" for="ww_livekit_model">Modele LiveKit</label>
+          <select id="ww_livekit_model" bind:value={wakeword.livekit_model}>
+            <option value="terminator_v1">Terminator v1</option>
+            <option value="terminator_v2">Terminator v2</option>
+          </select>
+          <p class="hint">V2 utilise terminator_livekit_v2.onnx ; si le fichier est absent, le backend retombe sur V1.</p>
+        </div>
+      {/if}
 
       <div class="form-group">
         <label class="form-label" for="ww_threshold">
