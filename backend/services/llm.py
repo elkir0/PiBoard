@@ -325,10 +325,14 @@ class LLMHandler:
     async def generate_playlist(self, prompt: str) -> list[str]:
         """Demande au LLM de generer une playlist de titres pour une ambiance/theme."""
         # Cerveau LOCAL : completion JSON via la passerelle (Ollama mode json).
+        # 900 tokens (vs 500) : Gemma 4 12B QAT serialise la playlist en JSON
+        # indente -> 500 tronquait la liste (JSON invalide -> repli). timeout 40s
+        # (defaut 25) pour absorber la generation 12B plus lente.
         if self._use_gateway():
             try:
                 txt = await self._gw.complete(self._PLAYLIST_SYSTEM, prompt,
-                                              max_tokens=500, temperature=0.8, json_mode=True)
+                                              max_tokens=900, temperature=0.8,
+                                              json_mode=True, timeout=40)
                 songs = self._parse_playlist(txt)
                 logger.info("[LLM] (gateway) Playlist: %d morceaux pour '%s'", len(songs), prompt[:40])
                 if songs:

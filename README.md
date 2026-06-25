@@ -86,7 +86,7 @@ Every stage is swappable, local **or** cloud:
 |----------------|------------------------------------------------|---------------------------|
 | Wake word      | [livekit-wakeword](https://pypi.org/project/livekit-wakeword/) (trained model) | — |
 | Speech-to-text | **Vosk** (offline) · Nemotron ASR (LAN)        | Voxtral (Mistral)         |
-| LLM            | **Ollama** (e.g. Qwen) via a tiny LAN gateway  | Mistral                   |
+| LLM            | **Ollama** (e.g. Gemma) via a tiny LAN gateway | Mistral                   |
 | Text-to-speech | **Piper** (offline) · Voxtral MLX (LAN)        | Voxtral (Mistral)         |
 
 Pick *all-local* (zero cost, fully private), *Pi + a LAN helper machine* (a Mac/PC running Ollama),
@@ -168,15 +168,15 @@ free internet radio. Use it responsibly.
 
 ## 🗺️ Roadmap
 
-Shipped recently: legal-by-default music, full FR/EN localization, runtime theming, a pluggable
-home-automation layer (Shelly/Kasa **or** Home Assistant), and resolution-independent layouts.
+Shipped recently: legal-by-default music, full FR/EN localization, the first-run setup wizard,
+runtime theming, a pluggable home-automation layer (Shelly/Kasa **or** Home Assistant),
+resolution-independent landscape layouts, and a Spotify Connect receiver via go-librespot.
 
 Next up:
 
-- 🧙 **First-run setup wizard** — guided onboarding so non-developers can configure everything from the browser.
-- 🎧 **Spotify Connect** (librespot) as a first-class music source.
 - 📱 **Portrait & adaptive layouts** — full reflow for portrait screens and an adaptive nav rail.
-- 🏠 **Deeper Home Assistant integration** — a fully data-driven home page from your HA entities.
+- 🏠 **Deeper Home Assistant integration** — validate against a real HA instance and make the Home page fully data-driven.
+- 🧰 **Install/docs polish** — hardware matrix, known-good shopping list, and clearer all-on-Pi / LAN-helper / cloud presets.
 - 🗣️ **More wake words & languages** — bring-your-own hotword, additional UI locales.
 
 ## 🤝 Contributing
@@ -190,4 +190,4 @@ readable as possible, every service fails soft. Pick anything from the roadmap, 
 
 ---
 
-<p align="center"><sub>Built and maintained with the help of Claude Code. Made for a real living room. 🛋️</sub></p>
+<p align="center"><sub>Built and maintained with AI-assisted development. Made for a real living room. 🛋️</sub></p>

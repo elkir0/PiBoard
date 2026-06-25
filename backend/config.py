@@ -67,7 +67,7 @@ NEMOTRON_ASR_TIMEOUT = float(os.getenv("NEMOTRON_ASR_TIMEOUT", "8"))
 # a Mistral cloud. Le Pi envoie du texte, recoit intention JSON et/ou WAV.
 GATEWAY_URL = os.getenv("GATEWAY_URL", "")            # ex: http://192.168.1.45:8765
 GATEWAY_TOKEN = os.getenv("GATEWAY_TOKEN", "")
-# Provider du cerveau : "gateway" (Ollama/Qwen local, gratuit) | "mistral" (cloud payant)
+# Provider du cerveau : "gateway" (Ollama/Gemma local, gratuit) | "mistral" (cloud payant)
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gateway")
 # Provider TTS par defaut : "gateway" (Voxtral MLX local) | "voxtral" (cloud) | "piper"
 TTS_PROVIDER = os.getenv("TTS_PROVIDER", "gateway")

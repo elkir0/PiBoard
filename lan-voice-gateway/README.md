@@ -1,12 +1,12 @@
 # LAN Voice Gateway (Mac mini)
 
-Cerveau vocal **local et gratuit** pour PI-Board. Encapsule Ollama/Qwen (intentions + chat)
+Cerveau vocal **local et gratuit** pour PI-Board. Encapsule Ollama/Gemma (intentions + chat)
 et le TTS Voxtral MLX local derrière une petite API LAN authentifiée. Le Raspberry Pi
 reste client léger : il envoie du texte, reçoit de l'intention JSON et/ou un WAV 24 kHz.
 
 ```
 Pi 4 (.152)  --HTTP+token-->  Mac mini :8765 (ce gateway)
-                                 ├─ Ollama 127.0.0.1:11434  (qwen3.5:9b, think:false)
+                                 ├─ Ollama 127.0.0.1:11434  (gemma4-12b-qat-q4-k-xl, think:false)
                                  └─ Voxtral 4B TTS MLX (modèle WARM en mémoire)
 ```
 

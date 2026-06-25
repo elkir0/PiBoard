@@ -1,7 +1,7 @@
 """LAN Voice Gateway — cerveau vocal LOCAL et GRATUIT sur le Mac mini.
 
 Expose sur le LAN (port 8765, auth par token) une petite API qui encapsule :
-  - Ollama / Qwen 3.5 9B (127.0.0.1:11434, think:false)  -> routeur d'intentions + chat court
+  - Ollama / Gemma 4 12B QAT (127.0.0.1:11434, think:false)  -> routeur d'intentions + chat court
   - Voxtral 4B TTS MLX local (modele charge WARM en memoire) -> WAV 24 kHz
 
 Le Raspberry Pi (PI-Board) reste client leger : il envoie du texte, recoit
@@ -39,8 +39,8 @@ except Exception:
     pass
 TOKEN = os.getenv("LAN_VOICE_TOKEN", "")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3.5:9b")
-OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "12"))
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma4-12b-qat-q4-k-xl")
+OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "60"))
 KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 ALLOWED_IPS = {ip.strip() for ip in os.getenv("ALLOWED_IPS", "").split(",") if ip.strip()}
 
@@ -92,7 +92,7 @@ Exemples :
 CHAT_SYSTEM = """Tu es un assistant vocal local français. Réponds en UNE phrase courte,
 naturelle, parlée (max 2 phrases). Pas de markdown, pas de liste, pas d'emoji."""
 
-# Fast-path déterministe (évite de réveiller Qwen pour les commandes triviales)
+# Fast-path déterministe (évite de réveiller le LLM pour les commandes triviales)
 _RE_MUSIC = re.compile(r"^\s*(?:mets?|met|joue|lance)\s+(?:moi\s+)?(?:de\s+la\s+|du\s+|la\s+|le\s+|des\s+)?"
                        r"(?:musique\s+(?:de\s+|du\s+|d['’]\s*)?)?(.+?)\s*$", re.I)
 _RE_PAUSE = re.compile(r"^\s*(?:pause|stop|arrê?te|arrete)(?:\s+la\s+musique)?\s*$", re.I)
@@ -172,6 +172,20 @@ def _extract_json(s: str):
     return None
 
 
+# Nettoyage de la sortie modèle. Retire le bloc <think>…</think> (reasoning) ET
+# les tokens spéciaux Gemma qui fuient parfois ("<image|>", "<start_of_image>",
+# "<unused42>"…) — sinon le TTS les lit à voix haute. Remplace par une espace
+# puis normalise (insécables et doubles espaces).
+_THINK_RE = re.compile(r"<think>.*?</think>", re.S)
+_SPECIAL_TOK_RE = re.compile(r"<(?:start_of_image|end_of_image|image|unused\d+)[^>]*>|<[^<>\s]*\|>")
+
+
+def _clean_text(raw: str) -> str:
+    s = _THINK_RE.sub("", raw or "")
+    s = _SPECIAL_TOK_RE.sub(" ", s)
+    return re.sub(r"[ \t]{2,}", " ", s).strip()
+
+
 def _norm_intent(obj: dict, fallback_speak: str = "") -> dict:
     allowed = {"music.play", "music.pause", "music.next", "music.volume_set",
                "home.light_on", "home.light_off", "timer.set", "reminder.add",
@@ -191,9 +205,12 @@ def _norm_intent(obj: dict, fallback_speak: str = "") -> dict:
     entities = obj.get("entities")
     if not isinstance(entities, dict):
         entities = {}
-    # speak doit être une str non vide (sinon le TTS casse côté Pi)
+    # speak doit être une str non vide (sinon le TTS casse côté Pi) ; on nettoie
+    # les tokens spéciaux Gemma qui peuvent fuiter dans ce champ parlé.
     speak_val = obj.get("speak")
-    speak = speak_val if isinstance(speak_val, str) and speak_val.strip() else fallback_speak
+    speak = _clean_text(speak_val) if isinstance(speak_val, str) else ""
+    if not speak:
+        speak = fallback_speak
     return {
         "intent": intent,
         "confidence": conf,
@@ -309,8 +326,7 @@ async def llm_intent(body: IntentIn, _=Depends(auth)):
 @app.post("/llm/chat")
 async def llm_chat(body: ChatIn, _=Depends(auth)):
     raw = await ollama_chat(CHAT_SYSTEM, (body.text or "").strip(), num_predict=200, temperature=0.3)
-    txt = re.sub(r"<think>.*?</think>", "", raw, flags=re.S).strip()
-    return {"text": txt}
+    return {"text": _clean_text(raw)}
 
 
 @app.post("/llm/complete")
@@ -320,8 +336,7 @@ async def llm_complete(body: CompleteIn, _=Depends(auth)):
     raw = await ollama_chat(body.system, (body.user or "").strip(),
                             num_predict=body.max_tokens, temperature=body.temperature,
                             fmt="json" if body.json_mode else None)
-    txt = re.sub(r"<think>.*?</think>", "", raw, flags=re.S).strip()
-    return {"text": txt}
+    return {"text": _clean_text(raw)}
 
 
 @app.post("/tts")
